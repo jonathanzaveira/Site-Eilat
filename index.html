@@ -229,6 +229,8 @@ h2 em{font-style:normal;color:var(--orange)}
 .price{font-family:var(--font-display);font-weight:700;font-size:23px;color:var(--orange);line-height:1}
 .price small{display:block;font-family:var(--font-body);font-size:11px;color:var(--txt-3);font-weight:400;margin-bottom:4px;letter-spacing:.06em;text-transform:uppercase}
 .price.sold{color:var(--txt-3);font-size:15px;text-transform:uppercase;letter-spacing:.1em}
+.price.ask{font-size:17px;letter-spacing:.02em}
+.gmodal-info .g-price b.ask{font-size:21px}
 .no-results{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--txt-2);border:1px dashed var(--line);border-radius:var(--radius)}
 .no-results b{display:block;font-family:var(--font-display);text-transform:uppercase;font-size:20px;letter-spacing:.1em;color:#fff;margin-bottom:8px}
 
@@ -965,6 +967,21 @@ const CARS = [
    ficha:{'Motor':'3.0 reto-6 Turbo + elétrico (PHEV)','Potência combinada':'489 cv','Torque':'700 Nm','Tração':'xDrive integral','Câmbio':'Automático Steptronic de 8 marchas','0-100 km/h':'4,8 s','Autonomia elétrica':'≈110 km','Nível de blindagem':'III-A','Garantia':'2 anos de fábrica'}}
 ];
 
+/* ============================================================
+   PREÇOS
+   true  = todos os carros aparecem como "Sob consulta"
+   false = volta a exibir os valores em reais, que continuam
+           guardados no array CARS logo acima
+   ============================================================ */
+const PRECO_SOB_CONSULTA = true;
+if (PRECO_SOB_CONSULTA) {
+  document.addEventListener('DOMContentLoaded', function(){
+    var sel = document.getElementById('fPreco');
+    if (sel) sel.style.display = 'none';
+  });
+}
+
+const precoTxt = v => PRECO_SOB_CONSULTA ? 'Sob consulta' : fmtBRL(v);
 const fmtBRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
 const fmtKm  = v => v === 0 ? 'Zero km' : v.toLocaleString('pt-BR') + ' km';
 
@@ -1016,7 +1033,7 @@ function renderCars(list){
         (c.sold ? '<span class="badge badge-sold">Vendido</span>' : '');
       const foot = c.sold
         ? '<div class="price sold">Vendido</div><button class="btn btn-line" onclick="openSold(\'' + (c.marca+' '+c.modelo).replace(/'/g,"\\'") + '\')">Avise-me</button>'
-        : '<div class="price"><small>À vista</small>' + fmtBRL(c.preco) + '</div><a class="btn btn-line" target="_blank" rel="noopener" href="https://wa.me/5521972372586?text=' + encodeURIComponent('Olá! Tenho interesse no ' + c.marca + ' ' + c.modelo + ' ' + c.versao + ' ' + c.ano + ' que vi no site da Eilat. Ele ainda está disponível?') + '">Tenho interesse</a>';
+        : '<div class="price' + (PRECO_SOB_CONSULTA ? ' ask' : '') + '"><small>' + (PRECO_SOB_CONSULTA ? 'Valor' : 'À vista') + '</small>' + precoTxt(c.preco) + '</div><a class="btn btn-line" target="_blank" rel="noopener" href="https://wa.me/5521972372586?text=' + encodeURIComponent('Olá! Tenho interesse no ' + c.marca + ' ' + c.modelo + ' ' + c.versao + ' ' + c.ano + ' que vi no site da Eilat. Ele ainda está disponível?') + '">Tenho interesse</a>';
       const cover = (c.fotos && c.fotos[0]) || c.foto;
       const hasGal = c.fotos && c.fotos.length > 1;
       return '<article class="car rv on' + (c.sold ? ' is-sold' : '') + '">' +
@@ -1067,7 +1084,7 @@ function applyFilters(){
     (!F.marca.value || c.marca === F.marca.value) &&
     (!F.ano.value || c.ano === +F.ano.value) &&
     (!F.km.value || c.km <= +F.km.value) &&
-    (!F.preco.value || c.preco <= +F.preco.value) &&
+    (PRECO_SOB_CONSULTA || !F.preco.value || c.preco <= +F.preco.value) &&
     (!F.comb.value || c.comb === F.comb.value) &&
     (!F.cambio.value || c.cambio === F.cambio.value)
   );
@@ -1133,7 +1150,8 @@ function openGallery(carIndex){
   document.getElementById('gBrand').textContent = gCar.marca;
   document.getElementById('gTitle').textContent = gCar.modelo;
   document.getElementById('gVer').textContent = gCar.versao;
-  document.getElementById('gPrice').textContent = gCar.sold ? 'Vendido' : fmtBRL(gCar.preco);
+  document.getElementById('gPrice').textContent = gCar.sold ? 'Vendido' : precoTxt(gCar.preco);
+  document.getElementById('gPrice').classList.toggle('ask', PRECO_SOB_CONSULTA && !gCar.sold);
   document.getElementById('gWa').href = 'https://wa.me/5521972372586?text=' + encodeURIComponent('Olá! Tenho interesse no ' + gCar.marca + ' ' + gCar.modelo + ' ' + gCar.versao + ' ' + gCar.ano + ' que vi no site da Eilat. Ele ainda está disponível?');
 
   document.getElementById('gBadges').innerHTML =
