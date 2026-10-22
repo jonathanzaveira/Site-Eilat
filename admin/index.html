@@ -105,6 +105,19 @@ main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
 .st.disponivel{color:#7be0a8}
 .st.vendido{color:#ff9a9d}
 .st.oculto{color:var(--txt-3)}
+.thumb{object-fit:cover}
+.src{display:inline-block;margin-left:6px;font-size:10px;letter-spacing:.1em;padding:2px 6px;border-radius:5px;background:rgba(0,140,220,.15);color:#6fc3ff;vertical-align:1px}
+.sync{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt-3);margin:-6px 0 14px}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.sync.bad{color:#ff9a9d}
+.sync.bad i{background:var(--bad)}
+.lock-note{font-size:13px;line-height:1.5;padding:12px 14px;border-radius:10px;background:rgba(0,140,220,.1);border:1px solid rgba(0,140,220,.3);color:#a9dbff;margin-bottom:18px}
+.locked .ph{cursor:default}
+.inp:disabled,.check:has(input:disabled){opacity:.55;cursor:not-allowed}
+.locked .photos + input + .hint{display:none}
+.locked .ph .tools,.locked .drop{display:none}
+.opc{display:flex;flex-wrap:wrap;gap:6px}
+.opc span{font-size:12px;color:var(--txt-2);border:1px solid var(--line-2);border-radius:20px;padding:4px 10px}
 .empty{padding:40px 20px;text-align:center;color:var(--txt-3);border:1px dashed var(--line-2);border-radius:var(--r)}
 @media (max-width:640px){
   .row{flex-wrap:wrap}
@@ -227,6 +240,7 @@ main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
         <h2>Estoque</h2>
         <button class="btn btn-primary" id="newCar">+ Novo veículo</button>
       </div>
+      <div class="sync" id="syncInfo" hidden><i></i><span></span></div>
       <div class="toolbar"><input class="inp" id="search" type="search" placeholder="Buscar por marca ou modelo"></div>
       <div class="chips" id="chips"></div>
       <p class="hint" id="sortHint">Arraste pelos pontinhos para mudar a ordem em que os carros aparecem no site.</p>
@@ -288,6 +302,7 @@ main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
       <button class="icon-btn" id="eClose" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <form class="sheet-body" id="eForm" novalidate>
+      <div class="lock-note" id="eLock" hidden>Este carro vem da <b>AutoCerto</b>: dados e fotos se atualizam sozinhos a cada 30 minutos. Para mudar preço, km ou fotos, edite na AutoCerto. Aqui você controla a <b>situação</b> e a <b>ficha técnica</b>.</div>
       <div class="sec">
         <h4>Fotos <span class="count" id="eCount"></span></h4>
         <div class="photos" id="ePhotos"></div>
@@ -319,6 +334,11 @@ main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
             <select class="inp" name="tipo"><option value="suv">SUV / Picape</option><option value="sport">Esportivo</option></select>
           </label>
         </div>
+      </div>
+
+      <div class="sec" id="eOpcSec" hidden>
+        <h4>Opcionais <span class="count" id="eOpcCount"></span></h4>
+        <div class="opc" id="eOpc"></div>
       </div>
 
       <div class="sec">
@@ -425,7 +445,20 @@ async function loadCars(){
   const { data, error } = await sb.from('carros').select('*').order('ordem', { ascending: true }).order('created_at', { ascending: false });
   if (error) return fail(error, 'Erro ao carregar o estoque');
   cars = data; renderCars();
+  loadSync();
   $('#dlMarca').innerHTML = [...new Set(cars.map(c => c.marca))].sort().map(m => '<option value="' + esc(m) + '">').join('');
+}
+async function loadSync(){
+  const { data } = await sb.from('config').select('sync_em,sync_ok,sync_msg').eq('id', 1).maybeSingle();
+  const el = $('#syncInfo');
+  if (!data || !data.sync_em) { el.hidden = true; return; }
+  const min = Math.round((Date.now() - new Date(data.sync_em).getTime()) / 60000);
+  const quando = min < 1 ? 'agora' : min < 60 ? 'há ' + min + ' min' : min < 1440 ? 'há ' + Math.round(min / 60) + ' h' : 'há ' + Math.round(min / 1440) + ' dias';
+  el.hidden = false;
+  el.classList.toggle('bad', !data.sync_ok || min > 180);
+  el.querySelector('span').textContent = data.sync_ok
+    ? 'AutoCerto sincronizada ' + quando + (min > 180 ? ' (atrasada: confira a aba Actions do GitHub)' : '') + ' · ' + (data.sync_msg || '')
+    : 'Falha na última sincronização com a AutoCerto (' + quando + '): ' + (data.sync_msg || '');
 }
 function renderChips(){
   const n = s => cars.filter(c => s === 'todos' || c.status === s).length;
@@ -447,13 +480,13 @@ function renderCars(){
     el.innerHTML = '<div class="empty">' + (cars.length ? 'Nenhum veículo nesse filtro.' : 'Nenhum veículo cadastrado ainda. Clique em <b>+ Novo veículo</b>.') + '</div>';
   } else {
     el.innerHTML = list.map(c => {
-      const cover = c.fotos && c.fotos[0] ? 'background-image:url(\'' + esc(photoSrc(c.fotos[0])) + '\')' : '';
+      const cover = c.fotos && c.fotos[0] ? '<img class="thumb" src="' + esc(photoSrc(c.fotos[0])) + '" alt="" loading="lazy">' : '<div class="thumb"></div>';
       const km = c.km ? c.km.toLocaleString('pt-BR') + ' km' : 'Zero km';
       return '<div class="row" data-id="' + c.id + '">' +
         '<span class="handle" aria-hidden="true">' + ICON.grip + '</span>' +
-        '<div class="thumb" style="' + cover + '"></div>' +
+        cover +
         '<div class="info"><div class="brand">' + esc(c.marca) + (c.blindado ? ' · Blindado' : '') + '</div>' +
-          '<div class="name">' + esc(c.modelo) + '</div>' +
+          '<div class="name">' + esc(c.modelo) + (c.origem === 'autocerto' ? '<span class="src">AUTOCERTO</span>' : '') + '</div>' +
           '<div class="meta">' + esc([c.versao, c.ano, km, (c.fotos || []).length + ' fotos'].filter(Boolean).join(' · ')) + '</div></div>' +
         '<div class="acts">' +
           '<select class="st ' + c.status + '" data-status aria-label="Situação">' +
@@ -512,7 +545,15 @@ function openEditor(car){
   form.elements.zero.checked = !!c.zero;
   renderFicha(Array.isArray(c.ficha) ? c.ficha : []);
   renderPhotos();
-  $('#eDelete').hidden = isNew;
+  ed.locked = !isNew && car.origem === 'autocerto';
+  $('#eLock').hidden = !ed.locked;
+  form.classList.toggle('locked', ed.locked);
+  ['marca','modelo','versao','ano','km','preco','comb','cambio','tipo','blindado','zero'].forEach(k => { form.elements[k].disabled = ed.locked; });
+  const opc = (car && car.opcionais) || [];
+  $('#eOpcSec').hidden = !opc.length;
+  $('#eOpcCount').textContent = opc.length ? '(' + opc.length + ')' : '';
+  $('#eOpc').innerHTML = opc.map(o => '<span>' + esc(o) + '</span>').join('');
+  $('#eDelete').hidden = isNew || ed.locked;
   show('editor', true);
   document.body.style.overflow = 'hidden';
   form.scrollTop = 0;
@@ -574,7 +615,7 @@ function renderPhotos(){
     '<label class="drop" id="eDrop" for="eFile">' + ICON.plus + 'Adicionar fotos<small>ou arraste aqui</small></label>';
   $('#eCount').textContent = ed.fotos.length ? '(' + ed.fotos.length + ')' : '';
   if (photoSortable) photoSortable.destroy();
-  photoSortable = window.Sortable ? Sortable.create(el, {
+  photoSortable = (window.Sortable && !ed.locked) ? Sortable.create(el, {
     animation: 150, ghostClass: 'ghost', draggable: '.ph[data-src]', filter: '.tools button', preventOnFilter: false,
     delay: 120, delayOnTouchOnly: true,
     onEnd: () => { ed.fotos = [...el.querySelectorAll('.ph[data-src]')].map(n => n.dataset.src); renderPhotos(); }
@@ -614,7 +655,7 @@ async function compress(file){
 }
 async function uploadFiles(fileList){
   const files = [...(fileList || [])].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
-  if (!files.length || !ed) return;
+  if (!files.length || !ed || ed.locked) return;
   const edRef = ed;
   edRef.uploading += files.length; renderPhotos();
   let falhas = 0;
@@ -652,7 +693,9 @@ $('#eSave').addEventListener('click', async () => {
   };
   const btn = $('#eSave'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
   let res;
-  if (ed.isNew) {
+  if (ed.locked) {
+    res = await sb.from('carros').update({ status: row.status, ficha: row.ficha }).eq('id', ed.id);
+  } else if (ed.isNew) {
     const min = cars.length ? Math.min(...cars.map(c => c.ordem || 0)) : 10;
     res = await sb.from('carros').insert(Object.assign({ id: ed.id, ordem: min - 10 }, row));
   } else {

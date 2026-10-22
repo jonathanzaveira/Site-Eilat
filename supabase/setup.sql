@@ -49,6 +49,13 @@ create table if not exists public.carros (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- campos do espelhamento com a AutoCerto
+alter table public.carros add column if not exists origem text not null default 'manual';      -- manual | seed | autocerto
+alter table public.carros add column if not exists autocerto_id bigint unique;
+alter table public.carros add column if not exists opcionais text[] not null default '{}';
+alter table public.carros add column if not exists categoria text not null default '';
+alter table public.carros add column if not exists vendido_em timestamptz;                     -- preenchido pelo robô quando o carro sai da AutoCerto
+alter table public.carros add column if not exists autocerto_modificado text;
 alter table public.carros enable row level security;
 
 drop policy if exists "carros_public_read" on public.carros;
@@ -83,6 +90,10 @@ create table if not exists public.config (
   preco_sob_consulta boolean not null default true,
   updated_at timestamptz not null default now()
 );
+alter table public.config add column if not exists sync_em timestamptz;
+alter table public.config add column if not exists sync_ok boolean;
+alter table public.config add column if not exists sync_msg text;
+alter table public.config add column if not exists seed_ocultado boolean not null default false;
 alter table public.config enable row level security;
 insert into public.config (id) values (1) on conflict (id) do nothing;
 
@@ -105,6 +116,9 @@ grant usage on schema public to anon, authenticated;
 grant select on public.carros, public.videos, public.config to anon, authenticated;
 grant select, insert, update, delete on public.carros, public.videos, public.admins to authenticated;
 grant update on public.config to authenticated;
+-- o robô de sincronização usa a chave secreta (service_role)
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.carros, public.config to service_role;
 grant execute on function public.is_admin() to anon, authenticated;
 
 -- 5. FOTOS (Storage) ----------------------------------------------
@@ -127,31 +141,31 @@ create policy "fotos_admin_delete" on storage.objects for delete to authenticate
 do $seed$
 begin
 if not exists (select 1 from public.carros) then
-insert into public.carros (marca, modelo, versao, ano, km, preco, comb, cambio, blindado, zero, status, cor, tipo, fotos, ficha, ordem) values
+insert into public.carros (marca, modelo, versao, ano, km, preco, comb, cambio, blindado, zero, status, cor, tipo, fotos, ficha, ordem, origem) values
   ('Toyota', 'SW4 SRX Platinum', '2.8 Diesel 4x4 7 lugares', 2026, 0, 559900, 'Diesel', 'Automático', true, true, 'disponivel', '#15161a', 'suv',
    array['assets/cars/sw4-1.jpg','assets/cars/sw4-2.jpg','assets/cars/sw4-3.jpg','assets/cars/sw4-4.jpg','assets/cars/sw4-5.jpg','assets/cars/sw4-6.jpg','assets/cars/sw4-7.jpg','assets/cars/sw4-8.jpg']::text[],
-   '[{"k":"Motor","v":"2.8 Turbo Diesel 16V"},{"k":"Potência","v":"204 cv"},{"k":"Torque","v":"51,0 kgfm (500 Nm)"},{"k":"Tração","v":"4x4 integral com reduzida"},{"k":"Câmbio","v":"Automático de 6 marchas"},{"k":"Ocupantes","v":"7 lugares"},{"k":"Tanque","v":"80 litros"},{"k":"Porta-malas","v":"953 L"},{"k":"Comprimento","v":"4,86 m"},{"k":"Entre-eixos","v":"2,75 m"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"3 anos de fábrica"}]'::jsonb, 10),
+   '[{"k":"Motor","v":"2.8 Turbo Diesel 16V"},{"k":"Potência","v":"204 cv"},{"k":"Torque","v":"51,0 kgfm (500 Nm)"},{"k":"Tração","v":"4x4 integral com reduzida"},{"k":"Câmbio","v":"Automático de 6 marchas"},{"k":"Ocupantes","v":"7 lugares"},{"k":"Tanque","v":"80 litros"},{"k":"Porta-malas","v":"953 L"},{"k":"Comprimento","v":"4,86 m"},{"k":"Entre-eixos","v":"2,75 m"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"3 anos de fábrica"}]'::jsonb, 10, 'seed'),
   ('GWM', 'Wey 07 Dark Edition', '1.5 Turbo PHEV AWD DHT', 2026, 0, 329900, 'Híbrido', 'Automático', true, true, 'disponivel', '#151515', 'suv',
    array['assets/cars/wey07-1.jpg','assets/cars/wey07-2.jpg','assets/cars/wey07-3.jpg','assets/cars/wey07-4.jpg','assets/cars/wey07-5.jpg']::text[],
-   '[{"k":"Motor","v":"1.5 Turbo + elétrico (PHEV DHT)"},{"k":"Potência combinada","v":"449 cv"},{"k":"Torque combinado","v":"762 Nm"},{"k":"Tração","v":"AWD integral"},{"k":"Câmbio","v":"Automático DHT"},{"k":"Autonomia elétrica","v":"≈52 km"},{"k":"Bateria","v":"19,09 kWh"},{"k":"Porta-malas","v":"379 L"},{"k":"Comprimento","v":"4,75 m"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"3 anos (bateria 8 anos)"}]'::jsonb, 20),
+   '[{"k":"Motor","v":"1.5 Turbo + elétrico (PHEV DHT)"},{"k":"Potência combinada","v":"449 cv"},{"k":"Torque combinado","v":"762 Nm"},{"k":"Tração","v":"AWD integral"},{"k":"Câmbio","v":"Automático DHT"},{"k":"Autonomia elétrica","v":"≈52 km"},{"k":"Bateria","v":"19,09 kWh"},{"k":"Porta-malas","v":"379 L"},{"k":"Comprimento","v":"4,75 m"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"3 anos (bateria 8 anos)"}]'::jsonb, 20, 'seed'),
   ('Denza', 'B5 DM-O', 'Híbrido Plug-in 4x4 · Grupo BYD', 2026, 0, 639900, 'Híbrido', 'Automático', true, true, 'disponivel', '#4a4e54', 'suv',
    array['assets/cars/denza-1.jpg','assets/cars/denza-2.jpg','assets/cars/denza-3.jpg','assets/cars/denza-4.jpg','assets/cars/denza-5.jpg','assets/cars/denza-6.jpg','assets/cars/denza-7.jpg']::text[],
-   '[{"k":"Motor","v":"1.5 Turbo + 2 motores elétricos (DM-o)"},{"k":"Potência combinada","v":"505 cv"},{"k":"Torque combinado","v":"760 Nm"},{"k":"Tração","v":"4x4 integral"},{"k":"Câmbio","v":"Automático e-CVT"},{"k":"0-100 km/h","v":"5,8 s"},{"k":"Autonomia elétrica","v":"≈100 km"},{"k":"Bateria","v":"26,6 kWh"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"6 anos"}]'::jsonb, 30),
+   '[{"k":"Motor","v":"1.5 Turbo + 2 motores elétricos (DM-o)"},{"k":"Potência combinada","v":"505 cv"},{"k":"Torque combinado","v":"760 Nm"},{"k":"Tração","v":"4x4 integral"},{"k":"Câmbio","v":"Automático e-CVT"},{"k":"0-100 km/h","v":"5,8 s"},{"k":"Autonomia elétrica","v":"≈100 km"},{"k":"Bateria","v":"26,6 kWh"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"6 anos"}]'::jsonb, 30, 'seed'),
   ('BYD', 'Song Plus Premium', 'DM-i Híbrido Plug-in', 2026, 0, 249900, 'Híbrido', 'Automático', true, true, 'disponivel', '#111214', 'suv',
    array['assets/cars/byd-songplus-1.jpg','assets/cars/byd-songplus-2.jpg','assets/cars/byd-songplus-3.jpg','assets/cars/byd-songplus-4.jpg','assets/cars/byd-songplus-5.jpg','assets/cars/byd-songplus-6.jpg']::text[],
-   '[{"k":"Motor","v":"1.5 Turbo + elétrico (DM-i)"},{"k":"Potência combinada","v":"245 cv"},{"k":"Tração","v":"Dianteira"},{"k":"Câmbio","v":"Automático e-CVT"},{"k":"Autonomia elétrica","v":"≈50 km"},{"k":"Consumo (modo híbrido)","v":"17,8 km/l"},{"k":"Porta-malas","v":"574 L"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"6 anos"}]'::jsonb, 40),
+   '[{"k":"Motor","v":"1.5 Turbo + elétrico (DM-i)"},{"k":"Potência combinada","v":"245 cv"},{"k":"Tração","v":"Dianteira"},{"k":"Câmbio","v":"Automático e-CVT"},{"k":"Autonomia elétrica","v":"≈50 km"},{"k":"Consumo (modo híbrido)","v":"17,8 km/l"},{"k":"Porta-malas","v":"574 L"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"6 anos"}]'::jsonb, 40, 'seed'),
   ('Leapmotor', 'C10', 'Elétrico Range Extender', 2026, 0, 279900, 'Elétrico', 'Automático', true, true, 'disponivel', '#e8e8e6', 'suv',
    array['assets/cars/leapmotor-c10-1.jpg','assets/cars/leapmotor-c10-2.jpg','assets/cars/leapmotor-c10-3.jpg','assets/cars/leapmotor-c10-4.jpg','assets/cars/leapmotor-c10-5.jpg']::text[],
-   '[{"k":"Motor","v":"Elétrico com gerador (REEV)"},{"k":"Potência","v":"218 cv"},{"k":"Torque","v":"320 Nm"},{"k":"Tração","v":"Traseira"},{"k":"Autonomia elétrica","v":"≈145 km"},{"k":"Autonomia total (c/ gerador)","v":"≈880 km"},{"k":"Bateria","v":"28,4 kWh"},{"k":"Porta-malas","v":"435 L"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"8 anos (bateria)"}]'::jsonb, 50),
+   '[{"k":"Motor","v":"Elétrico com gerador (REEV)"},{"k":"Potência","v":"218 cv"},{"k":"Torque","v":"320 Nm"},{"k":"Tração","v":"Traseira"},{"k":"Autonomia elétrica","v":"≈145 km"},{"k":"Autonomia total (c/ gerador)","v":"≈880 km"},{"k":"Bateria","v":"28,4 kWh"},{"k":"Porta-malas","v":"435 L"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"8 anos (bateria)"}]'::jsonb, 50, 'seed'),
   ('Omoda', '5', '1.5 TGDi HEV Luxury DHT', 2025, 0, 169900, 'Híbrido', 'Automático', false, true, 'disponivel', '#e9e9e7', 'suv',
    array['assets/cars/omoda-5-1.jpg','assets/cars/omoda-5-2.jpg','assets/cars/omoda-5-3.jpg','assets/cars/omoda-5-4.jpg','assets/cars/omoda-5-5.jpg']::text[],
-   '[{"k":"Motor","v":"1.5 Turbo Híbrido (HEV DHT)"},{"k":"Potência combinada","v":"197 cv"},{"k":"Torque","v":"275 Nm"},{"k":"Tração","v":"Dianteira"},{"k":"Câmbio","v":"Automático DHT"},{"k":"Consumo","v":"15,8 km/l"},{"k":"Porta-malas","v":"380 L"},{"k":"Comprimento","v":"4,40 m"},{"k":"Garantia","v":"7 anos"}]'::jsonb, 60),
+   '[{"k":"Motor","v":"1.5 Turbo Híbrido (HEV DHT)"},{"k":"Potência combinada","v":"197 cv"},{"k":"Torque","v":"275 Nm"},{"k":"Tração","v":"Dianteira"},{"k":"Câmbio","v":"Automático DHT"},{"k":"Consumo","v":"15,8 km/l"},{"k":"Porta-malas","v":"380 L"},{"k":"Comprimento","v":"4,40 m"},{"k":"Garantia","v":"7 anos"}]'::jsonb, 60, 'seed'),
   ('RAM', 'Rampage RT', '2.0 Hurricane Turbo Flex 4x4', 2025, 0, 329900, 'Flex', 'Automático', false, true, 'disponivel', '#1c1d20', 'suv',
    array['assets/cars/ram-rampage-1.jpg','assets/cars/ram-rampage-2.jpg','assets/cars/ram-rampage-3.jpg','assets/cars/ram-rampage-4.jpg','assets/cars/ram-rampage-5.jpg','assets/cars/ram-rampage-6.jpg']::text[],
-   '[{"k":"Motor","v":"2.0 Turbo Flex Hurricane"},{"k":"Potência","v":"272 cv (gasolina) / 268 cv (etanol)"},{"k":"Torque","v":"41,8 kgfm"},{"k":"Tração","v":"4x4 com reduzida"},{"k":"Câmbio","v":"Automático de 8 marchas"},{"k":"Caçamba","v":"1,03 m³"},{"k":"Comprimento","v":"5,42 m"},{"k":"Garantia","v":"3 anos de fábrica"}]'::jsonb, 70),
+   '[{"k":"Motor","v":"2.0 Turbo Flex Hurricane"},{"k":"Potência","v":"272 cv (gasolina) / 268 cv (etanol)"},{"k":"Torque","v":"41,8 kgfm"},{"k":"Tração","v":"4x4 com reduzida"},{"k":"Câmbio","v":"Automático de 8 marchas"},{"k":"Caçamba","v":"1,03 m³"},{"k":"Comprimento","v":"5,42 m"},{"k":"Garantia","v":"3 anos de fábrica"}]'::jsonb, 70, 'seed'),
   ('BMW', 'X5 xDrive50e', 'M Sport Híbrido (exemplo ilustrativo)', 2025, 4200, 1189900, 'Híbrido', 'Automático', true, false, 'vendido', '#3a3f46', 'suv',
    array[]::text[],
-   '[{"k":"Motor","v":"3.0 reto-6 Turbo + elétrico (PHEV)"},{"k":"Potência combinada","v":"489 cv"},{"k":"Torque","v":"700 Nm"},{"k":"Tração","v":"xDrive integral"},{"k":"Câmbio","v":"Automático Steptronic de 8 marchas"},{"k":"0-100 km/h","v":"4,8 s"},{"k":"Autonomia elétrica","v":"≈110 km"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"2 anos de fábrica"}]'::jsonb, 80);
+   '[{"k":"Motor","v":"3.0 reto-6 Turbo + elétrico (PHEV)"},{"k":"Potência combinada","v":"489 cv"},{"k":"Torque","v":"700 Nm"},{"k":"Tração","v":"xDrive integral"},{"k":"Câmbio","v":"Automático Steptronic de 8 marchas"},{"k":"0-100 km/h","v":"4,8 s"},{"k":"Autonomia elétrica","v":"≈110 km"},{"k":"Nível de blindagem","v":"III-A"},{"k":"Garantia","v":"2 anos de fábrica"}]'::jsonb, 80, 'seed');
 end if;
 if not exists (select 1 from public.videos) then
 insert into public.videos (youtube_id, tag, titulo, ordem) values
@@ -169,3 +183,6 @@ $seed$;
 -- Troque pelo e-mail que você vai usar para entrar no /admin.
 -- Para liberar outra pessoa depois, rode esta mesma linha com o e-mail dela.
 insert into public.admins (email) values ('SEU_EMAIL_AQUI@gmail.com') on conflict do nothing;
+
+-- avisa a API para reconhecer as tabelas e colunas novas
+notify pgrst, 'reload schema';

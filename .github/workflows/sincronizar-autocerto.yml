@@ -1,0 +1,46 @@
+# Espelha o estoque da AutoCerto no banco do site a cada 30 minutos.
+# Para rodar na hora: aba Actions > "Sincronizar estoque AutoCerto" > Run workflow.
+name: Sincronizar estoque AutoCerto
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"   # a cada 30 minutos (o GitHub pode atrasar alguns minutos em horários de pico)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write   # usado só para manter o agendamento ativo (ver último passo)
+
+concurrency:
+  group: sincronizar-autocerto
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependência
+        run: pip install requests==2.32.5
+
+      - name: Sincronizar
+        env:
+          AUTOCERTO_USERNAME: ${{ secrets.AUTOCERTO_USERNAME }}
+          AUTOCERTO_PASSWORD: ${{ secrets.AUTOCERTO_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python sync/autocerto_sync.py
+
+      # Em repositório público, o GitHub pausa agendamentos depois de 60 dias sem commits.
+      # Reativar o próprio workflow reinicia essa contagem, sem criar commit nem republicar o site.
+      - name: Manter agendamento ativo
+        if: always() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/sincronizar-autocerto.yml/enable" || true

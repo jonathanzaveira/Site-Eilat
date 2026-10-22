@@ -231,6 +231,11 @@ h2 em{font-style:normal;color:var(--orange)}
 .price.sold{color:var(--txt-3);font-size:15px;text-transform:uppercase;letter-spacing:.1em}
 .price.ask{font-size:17px;letter-spacing:.02em}
 .gmodal-info .g-price b.ask{font-size:21px}
+.more-wrap{display:flex;justify-content:center;margin-top:36px}
+.more-wrap[hidden]{display:none}
+.opc-title{margin:26px 0 12px;font-family:var(--font-display);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-2)}
+.opc-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.opc-list span{font-size:12.5px;color:var(--txt-2);border:1px solid var(--line);border-radius:40px;padding:6px 12px;background:var(--bg-3)}
 .no-results{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--txt-2);border:1px dashed var(--line);border-radius:var(--radius)}
 .no-results b{display:block;font-family:var(--font-display);text-transform:uppercase;font-size:20px;letter-spacing:.1em;color:#fff;margin-bottom:8px}
 
@@ -624,6 +629,7 @@ fbq('track','PageView');
     </div>
     <div class="stock-count" id="stockCount"></div>
     <div class="cars" id="cars"></div>
+    <div class="more-wrap" id="moreWrap" hidden><button class="btn btn-line" id="moreBtn" type="button">Ver mais veículos</button></div>
   </div>
 </section>
 
@@ -1035,7 +1041,16 @@ function carArt(c){
 const grid = document.getElementById('cars');
 const stockCount = document.getElementById('stockCount');
 
-function renderCars(list){
+/* mostra 12 por vez, botão "Ver mais" carrega o resto */
+const POR_PAGINA = 12;
+let VISIVEIS = POR_PAGINA, ULTIMA_LISTA = [];
+document.getElementById('moreBtn').addEventListener('click', function(){ VISIVEIS += POR_PAGINA; renderCars(ULTIMA_LISTA); });
+function renderCars(todos){
+  ULTIMA_LISTA = todos;
+  const list = todos.slice(0, VISIVEIS);
+  const resto = todos.length - list.length;
+  document.getElementById('moreWrap').hidden = resto <= 0;
+  document.getElementById('moreBtn').textContent = 'Ver mais veículos (' + resto + ')';
   if(!list.length){
     grid.innerHTML = '<div class="no-results"><b>Nenhum veículo encontrado</b>Não achou o que procura? Fale com a gente — buscamos o blindado ideal para você.<br><br><a class="btn btn-line" href="https://wa.me/5521972372586?text=Procuro%20um%20blindado%20espec%C3%ADfico." target="_blank" rel="noopener">Encomendar veículo</a></div>';
   } else {
@@ -1071,8 +1086,8 @@ function renderCars(list){
         '</div></article>';
     }).join('');
   }
-  const avail = list.filter(c=>!c.sold).length;
-  stockCount.innerHTML = 'Exibindo <b>' + list.length + '</b> veículo' + (list.length!==1?'s':'') + (avail !== list.length ? ' (' + avail + ' disponíve' + (avail!==1?'is':'l') + ')' : '');
+  const avail = todos.filter(c=>!c.sold).length;
+  stockCount.innerHTML = 'Exibindo <b>' + todos.length + '</b> veículo' + (todos.length!==1?'s':'') + (avail !== todos.length ? ' (' + avail + ' disponíve' + (avail!==1?'is':'l') + ')' : '');
 }
 
 /* filtros */
@@ -1097,6 +1112,7 @@ function montarFiltros(){
 }
 
 function applyFilters(){
+  VISIVEIS = POR_PAGINA;
   const list = CARS.filter(c =>
     (!F.marca.value || c.marca === F.marca.value) &&
     (!F.ano.value || c.ano === +F.ano.value) &&
@@ -1116,6 +1132,7 @@ function montarEstoque(){
   aplicarModoPreco();
   montarFiltros();
   Object.values(F).forEach(s => s.value = '');
+  VISIVEIS = POR_PAGINA;
   renderCars(CARS);
   document.getElementById('statStock').textContent = CARS.filter(c=>c.blindado && !c.sold).length;
 }
@@ -1182,7 +1199,7 @@ function openGallery(carIndex){
     (gCar.blindado ? '<span class="badge badge-armor">Blindado</span>' : '') +
     (gCar.zero ? '<span class="badge badge-zero">Zero km</span>' : '') +
     (gCar.sold ? '<span class="badge badge-sold">Vendido</span>' : '') +
-    (gCar.ficha ? '<button type="button" class="badge badge-spec" onclick="openSpecs()">Ficha técnica</button>' : '');
+    ((gCar.ficha || (gCar.opcionais && gCar.opcionais.length)) ? '<button type="button" class="badge badge-spec" onclick="openSpecs()">Ficha técnica</button>' : '');
 
   document.getElementById('gSpecs').innerHTML =
     '<div class="g-spec"><b>' + gCar.ano + '</b><span>Ano</span></div>' +
@@ -1237,7 +1254,7 @@ document.addEventListener('keydown', function(e){
 const specModal = document.getElementById('specModal');
 function openSpecs(){
   const car = gCarIndex !== null ? CARS[gCarIndex] : null;
-  if (!car || !car.ficha) return;
+  if (!car || (!car.ficha && !(car.opcionais && car.opcionais.length))) return;
   document.getElementById('sBrand').textContent = car.marca;
   document.getElementById('sTitle').textContent = car.modelo;
   document.getElementById('sVer').textContent = car.versao;
@@ -1247,7 +1264,10 @@ function openSpecs(){
   const all = Object.assign({}, base, car.ficha);
   document.getElementById('specList').innerHTML = Object.keys(all).map(function(k){
     return '<div class="spec-row"><span>' + k + '</span><b>' + all[k] + '</b></div>';
-  }).join('');
+  }).join('') + ((car.opcionais && car.opcionais.length) ?
+    '<div class="opc-title">Opcionais</div><div class="opc-list">' + car.opcionais.map(function(o){
+      return '<span>' + String(o).replace(/[&<>"]/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]; }) + '</span>';
+    }).join('') + '</div>' : '');
 
   specModal.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1338,7 +1358,7 @@ document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
       .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
   }
   Promise.all([
-    get('carros?select=*&status=neq.oculto&order=ordem.asc,created_at.desc'),
+    get('carros?select=id,marca,modelo,versao,ano,km,preco,comb,cambio,blindado,zero,status,cor,tipo,fotos,ficha,opcionais&status=neq.oculto&order=ordem.asc,created_at.desc'),
     get('videos?select=*&ativo=is.true&order=ordem.asc,created_at.asc'),
     get('config?select=preco_sob_consulta&id=eq.1')
   ]).then(function(res){
@@ -1353,9 +1373,11 @@ document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
         ano: r.ano, km: r.km, preco: Number(r.preco) || 0,
         comb: r.comb, cambio: r.cambio, blindado: r.blindado, zero: r.zero,
         sold: r.status === 'vendido', cor: r.cor || '#15161a', tipo: r.tipo || 'suv',
-        fotos: r.fotos || [], ficha: Object.keys(ficha).length ? ficha : null
+        fotos: r.fotos || [], ficha: Object.keys(ficha).length ? ficha : null, opcionais: r.opcionais || []
       };
     });
+    /* carros sem foto vão para o fim, mantendo a ordem definida no painel */
+    CARS = CARS.filter(function(c){ return c.fotos.length; }).concat(CARS.filter(function(c){ return !c.fotos.length; }));
     VIDEOS = videos.map(function(v){ return { id: v.youtube_id, tag: v.tag, title: v.titulo }; });
     montarEstoque();
     renderVideos();
