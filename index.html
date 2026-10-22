@@ -489,6 +489,19 @@ h2 em{font-style:normal;color:var(--orange)}
   .contact-top{justify-content:center;text-align:center}
 }
 </style>
+<!-- Meta Pixel (Eilat Barra) -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','410290621808401');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=410290621808401&ev=PageView&noscript=1"></noscript>
+<!-- Conexão com o banco do estoque (preencher em assets/js/supabase-config.js) -->
+<script src="assets/js/supabase-config.js"></script>
 </head>
 <body>
 
@@ -939,9 +952,11 @@ h2 em{font-style:normal;color:var(--orange)}
   if (p && p.catch) p.catch(function(){ /* autoplay bloqueado: poster permanece */ });
 })();
 
-/* ---------- ESTOQUE: dados fictícios (realistas) ---------- */
-/* Estoque real (fotos em assets/cars/ — enviar arquivos das fotos do Instagram) */
-const CARS = [
+/* ---------- ESTOQUE ----------
+   O estoque agora é gerenciado pelo painel /admin (Supabase).
+   A lista abaixo é só a RESERVA: aparece se o banco não estiver
+   configurado ou não responder. */
+let CARS = [
   {marca:'Toyota', modelo:'SW4 SRX Platinum', versao:'2.8 Diesel 4x4 7 lugares', ano:2026, km:0, preco:559900, comb:'Diesel', cambio:'Automático', blindado:true, zero:true, sold:false, cor:'#15161a', tipo:'suv',
    fotos:['assets/cars/sw4-1.jpg','assets/cars/sw4-2.jpg','assets/cars/sw4-3.jpg','assets/cars/sw4-4.jpg','assets/cars/sw4-5.jpg','assets/cars/sw4-6.jpg','assets/cars/sw4-7.jpg','assets/cars/sw4-8.jpg'],
    ficha:{'Motor':'2.8 Turbo Diesel 16V','Potência':'204 cv','Torque':'51,0 kgfm (500 Nm)','Tração':'4x4 integral com reduzida','Câmbio':'Automático de 6 marchas','Ocupantes':'7 lugares','Tanque':'80 litros','Porta-malas':'953 L','Comprimento':'4,86 m','Entre-eixos':'2,75 m','Nível de blindagem':'III-A','Garantia':'3 anos de fábrica'}},
@@ -973,12 +988,10 @@ const CARS = [
    false = volta a exibir os valores em reais, que continuam
            guardados no array CARS logo acima
    ============================================================ */
-const PRECO_SOB_CONSULTA = true;
-if (PRECO_SOB_CONSULTA) {
-  document.addEventListener('DOMContentLoaded', function(){
-    var sel = document.getElementById('fPreco');
-    if (sel) sel.style.display = 'none';
-  });
+let PRECO_SOB_CONSULTA = true; /* reserva: o valor real vem do /admin > Configurações */
+function aplicarModoPreco(){
+  var sel = document.getElementById('fPreco');
+  if (sel) sel.style.display = PRECO_SOB_CONSULTA ? 'none' : '';
 }
 
 const precoTxt = v => PRECO_SOB_CONSULTA ? 'Sob consulta' : fmtBRL(v);
@@ -1074,10 +1087,14 @@ const F = {
 function fillOptions(sel, values){
   values.forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; sel.appendChild(o); });
 }
-fillOptions(F.marca, [...new Set(CARS.map(c=>c.marca))].sort());
-fillOptions(F.ano, [...new Set(CARS.map(c=>c.ano))].sort((a,b)=>b-a));
-fillOptions(F.comb, [...new Set(CARS.map(c=>c.comb))].sort());
-fillOptions(F.cambio, [...new Set(CARS.map(c=>c.cambio))].sort());
+function resetOptions(sel){ while (sel.options.length > 1) sel.remove(1); }
+function montarFiltros(){
+  [F.marca, F.ano, F.comb, F.cambio].forEach(resetOptions);
+  fillOptions(F.marca, [...new Set(CARS.map(c=>c.marca))].sort());
+  fillOptions(F.ano, [...new Set(CARS.map(c=>c.ano))].sort((a,b)=>b-a));
+  fillOptions(F.comb, [...new Set(CARS.map(c=>c.comb))].sort());
+  fillOptions(F.cambio, [...new Set(CARS.map(c=>c.cambio))].sort());
+}
 
 function applyFilters(){
   const list = CARS.filter(c =>
@@ -1095,11 +1112,16 @@ document.getElementById('fClear').addEventListener('click', function(){
   Object.values(F).forEach(s => s.value = '');
   applyFilters();
 });
-renderCars(CARS);
-document.getElementById('statStock').textContent = CARS.filter(c=>c.blindado && !c.sold).length;
+function montarEstoque(){
+  aplicarModoPreco();
+  montarFiltros();
+  Object.values(F).forEach(s => s.value = '');
+  renderCars(CARS);
+  document.getElementById('statStock').textContent = CARS.filter(c=>c.blindado && !c.sold).length;
+}
 
 /* ---------- VÍDEOS: capas reais do YouTube + player sob demanda ---------- */
-const VIDEOS = [
+let VIDEOS = [
   {id:'MAPJNStmJJ8', tag:'Review · Blindado', title:'Toyota SW4 Diamond 2025 0km BLINDADA | Vale a Pena?'},
   {id:'yBw1hFZleeU', tag:'Review · Blindado', title:'O detalhe dessa Porsche Panamera me pegou de surpresa'},
   {id:'PKHvJIxkuYo', tag:'Unboxing · Blindado', title:'Unboxing de uma BMW M2 blindada — não era o que eu esperava'},
@@ -1108,6 +1130,7 @@ const VIDEOS = [
   {id:'HS27OGwyDYY', tag:'Review completo', title:'Hummer EV: isso não parece um elétrico — é um tanque de guerra'}
 ];
 const videosGrid = document.getElementById('videosGrid');
+function renderVideos(){
 videosGrid.innerHTML = VIDEOS.map(function(v){
   return '<article class="vid-card rv on">' +
     '<div class="vid-frame" onclick="playVideo(\'' + v.id + '\')" role="button" tabindex="0" aria-label="Assistir: ' + v.title.replace(/'/g,"\\'") + '">' +
@@ -1117,6 +1140,7 @@ videosGrid.innerHTML = VIDEOS.map(function(v){
     '<div class="vid-body"><span class="v-tag">' + v.tag + '</span><h3>' + v.title + '</h3></div>' +
   '</article>';
 }).join('');
+}
 
 const videoModal = document.getElementById('videoModal');
 function playVideo(id){
@@ -1297,6 +1321,56 @@ const cio = new IntersectionObserver(function(entries){
   });
 }, {threshold:.5});
 document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
+
+/* ---------- BANCO (Supabase): estoque, vídeos e configurações ---------- */
+(function carregarDoBanco(){
+  var cfg = window.EILAT_SUPABASE || {};
+  var stockCount = document.getElementById('stockCount');
+  function usarReserva(){ montarEstoque(); renderVideos(); }
+  if (!cfg.url || !cfg.key) { usarReserva(); return; }
+
+  stockCount.textContent = 'Carregando estoque...';
+  var base = cfg.url.replace(/\/+$/,'') + '/rest/v1/';
+  var ctrl = ('AbortController' in window) ? new AbortController() : null;
+  var timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 7000);
+  function get(path){
+    return fetch(base + path, { headers: { apikey: cfg.key }, signal: ctrl ? ctrl.signal : undefined })
+      .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+  Promise.all([
+    get('carros?select=*&status=neq.oculto&order=ordem.asc,created_at.desc'),
+    get('videos?select=*&ativo=is.true&order=ordem.asc,created_at.asc'),
+    get('config?select=preco_sob_consulta&id=eq.1')
+  ]).then(function(res){
+    clearTimeout(timer);
+    var carros = res[0], videos = res[1], conf = res[2];
+    if (conf && conf[0]) PRECO_SOB_CONSULTA = !!conf[0].preco_sob_consulta;
+    CARS = carros.map(function(r){
+      var ficha = {};
+      (r.ficha || []).forEach(function(it){ if (it && it.k) ficha[it.k] = it.v; });
+      return {
+        id: r.id, marca: r.marca, modelo: r.modelo, versao: r.versao || '',
+        ano: r.ano, km: r.km, preco: Number(r.preco) || 0,
+        comb: r.comb, cambio: r.cambio, blindado: r.blindado, zero: r.zero,
+        sold: r.status === 'vendido', cor: r.cor || '#15161a', tipo: r.tipo || 'suv',
+        fotos: r.fotos || [], ficha: Object.keys(ficha).length ? ficha : null
+      };
+    });
+    VIDEOS = videos.map(function(v){ return { id: v.youtube_id, tag: v.tag, title: v.titulo }; });
+    montarEstoque();
+    renderVideos();
+  }).catch(function(err){
+    clearTimeout(timer);
+    console.warn('Estoque: banco indisponível, usando a lista reserva.', err);
+    usarReserva();
+  });
+})();
+
+/* ---------- Pixel: clique em qualquer botão de WhatsApp vira evento Contact ---------- */
+document.addEventListener('click', function(e){
+  var a = e.target.closest && e.target.closest('a[href*="wa.me/"]');
+  if (a && window.fbq) fbq('track', 'Contact');
+}, true);
 
 /* ---------- TOAST ---------- */
 let toastT;

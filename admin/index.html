@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel · Eilat Motors</title>
+<link rel="icon" type="image/png" href="../assets/brand/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0A; --bg-2:#121212; --bg-3:#181818; --bg-4:#202020; --line:#262626; --line-2:#333;
+  --orange:#F04E12; --orange-2:#FF5E1F; --txt:#fff; --txt-2:#B8B8B8; --txt-3:#7A7A7A;
+  --ok:#2FBF71; --warn:#E0A100; --bad:#E5484D;
+  --font-display:'Oswald','Arial Narrow',sans-serif; --font-body:'Inter',system-ui,-apple-system,sans-serif;
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--txt);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+img{display:block;max-width:100%}
+[hidden]{display:none!important}
+a{color:inherit;text-decoration:none}
+
+/* botões e campos */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:10px;font-weight:600;font-size:14px;transition:background .15s,border-color .15s,opacity .15s;white-space:nowrap}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange-2)}
+.btn-ghost{border:1px solid var(--line-2);background:var(--bg-3)}
+.btn-ghost:hover{border-color:#4a4a4a}
+.btn-danger{border:1px solid rgba(229,72,77,.4);color:#ff8a8d;background:rgba(229,72,77,.08)}
+.btn-danger:hover{background:rgba(229,72,77,.16)}
+.btn-sm{height:34px;padding:0 12px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.icon-btn{width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--txt-2);border:1px solid var(--line);background:var(--bg-3)}
+.icon-btn:hover{color:#fff;border-color:var(--line-2)}
+.icon-btn svg{width:16px;height:16px}
+
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--txt-2);letter-spacing:.02em}
+.inp,select.inp,textarea.inp{width:100%;height:42px;padding:0 12px;border-radius:10px;border:1px solid var(--line-2);background:var(--bg-2);font-size:15px;font-weight:400;color:#fff;outline:none;transition:border-color .15s}
+textarea.inp{height:auto;padding:10px 12px;resize:vertical}
+.inp:focus{border-color:var(--orange)}
+.inp::placeholder{color:#5a5a5a}
+.check{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px;border-radius:10px;border:1px solid var(--line-2);background:var(--bg-2);font-size:14px;cursor:pointer;user-select:none}
+.check input{width:18px;height:18px;accent-color:var(--orange)}
+
+/* toggle */
+.switch{position:relative;width:46px;height:26px;flex:none}
+.switch input{position:absolute;opacity:0;inset:0;cursor:pointer;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:20px;background:#333;transition:.2s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+span{background:var(--orange)}
+.switch input:checked+span::after{transform:translateX(20px)}
+
+/* telas de entrada */
+.gate{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.gate-card{width:100%;max-width:380px;background:var(--bg-2);border:1px solid var(--line);border-radius:18px;padding:32px 24px}
+.gate-card img{height:40px;width:auto;margin:0 auto 22px}
+.gate-card h1{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:.04em;text-transform:uppercase;text-align:center}
+.gate-card p.sub{color:var(--txt-3);font-size:13px;text-align:center;margin:6px 0 24px}
+.gate-card form{display:flex;flex-direction:column;gap:14px}
+.gate-card .btn{width:100%;margin-top:6px}
+.msg{font-size:13px;padding:10px 12px;border-radius:10px;background:rgba(229,72,77,.1);border:1px solid rgba(229,72,77,.3);color:#ff9a9d}
+.msg.ok{background:rgba(47,191,113,.1);border-color:rgba(47,191,113,.3);color:#7be0a8}
+.gate-card code{background:#000;padding:2px 6px;border-radius:5px;font-size:12px;color:var(--orange-2)}
+
+/* app */
+.top{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.top-in img{height:26px;width:auto}
+.top-in .tag{font-family:var(--font-display);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt-3);border-left:1px solid var(--line-2);padding-left:12px}
+.top-in .sp{flex:1}
+.top-in .who{font-size:12px;color:var(--txt-3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs{max-width:1080px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto}
+.tab{padding:12px 14px;font-size:14px;font-weight:600;color:var(--txt-3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:#fff;border-color:var(--orange)}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
+.head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.head h2{font-family:var(--font-display);font-weight:600;font-size:24px;letter-spacing:.03em;text-transform:uppercase;flex:1;min-width:160px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .inp{flex:1;min-width:200px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{height:32px;padding:0 12px;border-radius:20px;border:1px solid var(--line-2);font-size:13px;font-weight:600;color:var(--txt-2)}
+.chip.on{background:#fff;color:#000;border-color:#fff}
+.chip b{font-weight:600;opacity:.6;margin-left:4px}
+.hint{font-size:12px;color:var(--txt-3);margin-bottom:12px}
+
+/* lista de carros */
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;padding:10px;border-radius:var(--r);background:var(--bg-2);border:1px solid var(--line)}
+.row.ghost{opacity:.4}
+.handle{width:22px;flex:none;display:flex;justify-content:center;color:#4a4a4a;cursor:grab;touch-action:none}
+.handle svg{width:16px;height:16px}
+.no-sort .handle{display:none}
+.thumb{width:84px;height:60px;flex:none;border-radius:8px;background:#1a1a1a center/cover no-repeat;border:1px solid var(--line)}
+.row .info{flex:1;min-width:0}
+.row .brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+.row .name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .meta{font-size:12px;color:var(--txt-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .acts{display:flex;align-items:center;gap:8px;flex:none}
+.st{height:34px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg-3);padding:0 8px;font-size:13px;font-weight:600}
+.st.disponivel{color:#7be0a8}
+.st.vendido{color:#ff9a9d}
+.st.oculto{color:var(--txt-3)}
+.empty{padding:40px 20px;text-align:center;color:var(--txt-3);border:1px dashed var(--line-2);border-radius:var(--r)}
+@media (max-width:640px){
+  .row{flex-wrap:wrap}
+  .row .info{flex-basis:calc(100% - 140px)}
+  .row .acts{width:100%;padding-left:34px}
+  .row .acts .st{flex:1}
+  .top-in .who{display:none}
+}
+
+/* editor */
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.7);display:flex;justify-content:flex-end}
+.sheet-in{width:100%;max-width:720px;height:100%;background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column}
+.sheet-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sheet-head h3{flex:1;font-family:var(--font-display);font-weight:600;font-size:19px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-body{flex:1;overflow-y:auto;padding:18px 16px 30px;-webkit-overflow-scrolling:touch}
+.sheet-foot{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg-2)}
+.sheet-foot .sp{flex:1}
+.sec{margin-bottom:26px}
+.sec h4{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-3);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.sec h4 .count{color:var(--txt-2);letter-spacing:0;font-weight:500;text-transform:none}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid .full{grid-column:1/-1}
+@media (min-width:560px){.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.ph{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#1a1a1a;border:1px solid var(--line);cursor:grab;touch-action:none}
+.ph img{width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none}
+.ph .cover{position:absolute;left:6px;top:6px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:var(--orange);color:#fff;padding:3px 7px;border-radius:20px}
+.ph .tools{position:absolute;right:6px;top:6px;display:flex;gap:4px}
+.ph .tools button{width:28px;height:28px;border-radius:7px;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;color:#fff}
+.ph .tools button:hover{background:#000}
+.ph .tools svg{width:14px;height:14px}
+.ph.uploading{display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--txt-3);cursor:default}
+.ph.ghost{opacity:.35}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:4/3;border-radius:10px;border:1.5px dashed var(--line-2);color:var(--txt-2);font-size:13px;font-weight:600;cursor:pointer;text-align:center;padding:8px}
+.drop:hover,.drop.over{border-color:var(--orange);color:#fff}
+.drop svg{width:22px;height:22px}
+.drop small{font-weight:400;color:var(--txt-3);font-size:11px}
+
+.kv{display:flex;flex-direction:column;gap:8px}
+.kv-row{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) auto;gap:8px;align-items:center}
+.kv-row .moves{display:flex;gap:4px}
+
+/* vídeos */
+.vrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:var(--r);background:var(--bg-2);border:1px solid var(--line)}
+.vrow .vthumb{width:120px;aspect-ratio:16/9;flex:none;border-radius:8px;background:#1a1a1a center/cover}
+.vrow .vf{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,.5fr) minmax(0,1.5fr);gap:8px}
+.vrow .acts{display:flex;gap:8px;align-items:center}
+@media (max-width:640px){.vrow{flex-wrap:wrap}.vrow .vthumb{width:96px}.vrow .vf{grid-template-columns:1fr;flex-basis:calc(100% - 140px)}.vrow .acts{width:100%;justify-content:flex-end}}
+.addbox{padding:14px;border-radius:var(--r);border:1px solid var(--line);background:var(--bg-2);margin-bottom:16px}
+
+/* configurações */
+.card{padding:18px;border-radius:var(--r);border:1px solid var(--line);background:var(--bg-2);margin-bottom:14px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.card p{font-size:13px;color:var(--txt-3)}
+.card .line{display:flex;align-items:center;gap:16px}
+.card .line > div{flex:1}
+.admins{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.admins div{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--bg-3);font-size:14px}
+.admins div span{flex:1;overflow:hidden;text-overflow:ellipsis}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:100;background:#fff;color:#000;font-weight:600;font-size:14px;padding:12px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);transition:.25s;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--bad);color:#fff}
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;justify-content:center;padding:60px}
+</style>
+</head>
+<body>
+
+<!-- Banco ainda não configurado -->
+<section class="gate" id="vConfig" hidden>
+  <div class="gate-card">
+    <img src="../assets/brand/logo.png" alt="Eilat Motors">
+    <h1>Painel não conectado</h1>
+    <p class="sub">Falta ligar o painel ao banco de dados.</p>
+    <p class="msg">Preencha a URL e a chave do Supabase no arquivo <code>assets/js/supabase-config.js</code> e publique de novo.</p>
+  </div>
+</section>
+
+<!-- Login -->
+<section class="gate" id="vLogin" hidden>
+  <div class="gate-card">
+    <img src="../assets/brand/logo.png" alt="Eilat Motors">
+    <h1>Painel do site</h1>
+    <p class="sub">Acesso restrito à equipe Eilat Motors</p>
+    <form id="loginForm">
+      <label class="f">E-mail<input class="inp" type="email" id="lEmail" autocomplete="username" required></label>
+      <label class="f">Senha<input class="inp" type="password" id="lPass" autocomplete="current-password" required></label>
+      <div class="msg" id="lMsg" hidden></div>
+      <button class="btn btn-primary" type="submit" id="lBtn">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<!-- App -->
+<div id="vApp" hidden>
+  <header class="top">
+    <div class="top-in">
+      <img src="../assets/brand/logo.png" alt="Eilat Motors">
+      <span class="tag">Painel</span>
+      <span class="sp"></span>
+      <span class="who" id="who"></span>
+      <a class="btn btn-ghost btn-sm" href="../" target="_blank" rel="noopener">Ver site</a>
+      <button class="btn btn-ghost btn-sm" id="logout">Sair</button>
+    </div>
+    <nav class="tabs">
+      <button class="tab on" data-tab="estoque">Estoque</button>
+      <button class="tab" data-tab="videos">Vídeos</button>
+      <button class="tab" data-tab="config">Configurações</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ESTOQUE -->
+    <section id="tEstoque">
+      <div class="head">
+        <h2>Estoque</h2>
+        <button class="btn btn-primary" id="newCar">+ Novo veículo</button>
+      </div>
+      <div class="toolbar"><input class="inp" id="search" type="search" placeholder="Buscar por marca ou modelo"></div>
+      <div class="chips" id="chips"></div>
+      <p class="hint" id="sortHint">Arraste pelos pontinhos para mudar a ordem em que os carros aparecem no site.</p>
+      <div class="list" id="carList"><div class="loading"><div class="spin"></div></div></div>
+    </section>
+
+    <!-- VÍDEOS -->
+    <section id="tVideos" hidden>
+      <div class="head"><h2>Vídeos</h2></div>
+      <form class="addbox" id="vidForm">
+        <div class="grid g3">
+          <label class="f full">Link do YouTube<input class="inp" id="vUrl" placeholder="https://youtu.be/..." required></label>
+          <label class="f">Etiqueta<input class="inp" id="vTag" placeholder="Review · Blindado" value="Review · Blindado"></label>
+          <label class="f" style="grid-column:span 2">Título<input class="inp" id="vTitle" placeholder="Título que aparece no card" required></label>
+        </div>
+        <div style="margin-top:12px;display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">Adicionar vídeo</button></div>
+      </form>
+      <p class="hint">Arraste para reordenar. Vídeos desligados ficam fora do site. As edições salvam sozinhas.</p>
+      <div class="list" id="vidList"></div>
+    </section>
+
+    <!-- CONFIGURAÇÕES -->
+    <section id="tConfig" hidden>
+      <div class="head"><h2>Configurações</h2></div>
+      <div class="card">
+        <div class="line">
+          <div>
+            <h3>Preço sob consulta</h3>
+            <p>Ligado: todos os carros mostram "Sob consulta" e o filtro de preço some. Desligado: o site mostra o valor cadastrado em cada carro.</p>
+          </div>
+          <label class="switch"><input type="checkbox" id="cPreco"><span></span></label>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Quem pode acessar o painel</h3>
+        <p>Para liberar alguém: crie o usuário dessa pessoa no Supabase (Authentication &gt; Users &gt; Add user) e adicione o e-mail dela aqui.</p>
+        <div class="admins" id="admins"></div>
+        <form id="adminForm" style="display:flex;gap:8px;margin-top:10px">
+          <input class="inp" type="email" id="aEmail" placeholder="email@exemplo.com" required>
+          <button class="btn btn-ghost" type="submit">Liberar</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Trocar minha senha</h3>
+        <form id="passForm" style="display:flex;gap:8px;margin-top:10px">
+          <input class="inp" type="password" id="pNew" minlength="8" placeholder="Nova senha (mínimo 8 caracteres)" autocomplete="new-password" required>
+          <button class="btn btn-ghost" type="submit">Salvar</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Editor de veículo -->
+<div class="sheet" id="editor" hidden>
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h3 id="eTitle">Novo veículo</h3>
+      <button class="icon-btn" id="eClose" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <form class="sheet-body" id="eForm" novalidate>
+      <div class="sec">
+        <h4>Fotos <span class="count" id="eCount"></span></h4>
+        <div class="photos" id="ePhotos"></div>
+        <input type="file" id="eFile" accept="image/*" multiple hidden>
+        <p class="hint" style="margin:10px 0 0">A primeira foto é a capa. Arraste para reordenar. As fotos são reduzidas automaticamente antes de subir.</p>
+      </div>
+
+      <div class="sec">
+        <h4>Veículo</h4>
+        <div class="grid g3">
+          <label class="f">Marca*<input class="inp" name="marca" list="dlMarca" required></label>
+          <label class="f" style="grid-column:span 2">Modelo*<input class="inp" name="modelo" required></label>
+          <label class="f full">Versão<input class="inp" name="versao" placeholder="Ex: 2.8 Diesel 4x4 7 lugares"></label>
+          <label class="f">Ano*<input class="inp" name="ano" type="number" inputmode="numeric" min="1990" max="2100" required></label>
+          <label class="f">Quilometragem<input class="inp" name="km" type="number" inputmode="numeric" min="0" placeholder="0 = zero km"></label>
+          <label class="f">Preço (R$)<input class="inp" name="preco" type="number" inputmode="decimal" min="0" step="100"></label>
+          <label class="f">Combustível<input class="inp" name="comb" list="dlComb"></label>
+          <label class="f">Câmbio<input class="inp" name="cambio" list="dlCambio"></label>
+          <label class="f">Situação
+            <select class="inp" name="status">
+              <option value="disponivel">Disponível</option>
+              <option value="vendido">Vendido</option>
+              <option value="oculto">Oculto (fora do site)</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" name="blindado"> Blindado</label>
+          <label class="check"><input type="checkbox" name="zero"> Zero km</label>
+          <label class="f">Silhueta (sem foto)
+            <select class="inp" name="tipo"><option value="suv">SUV / Picape</option><option value="sport">Esportivo</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h4>Ficha técnica</h4>
+        <div class="kv" id="eFicha"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="eAddKv" style="margin-top:10px">+ Adicionar item</button>
+      </div>
+    </form>
+    <div class="sheet-foot">
+      <button class="btn btn-danger" id="eDelete">Excluir</button>
+      <span class="sp"></span>
+      <button class="btn btn-ghost" id="eCancel">Cancelar</button>
+      <button class="btn btn-primary" id="eSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="dlMarca"></datalist>
+<datalist id="dlComb"><option value="Flex"><option value="Gasolina"><option value="Diesel"><option value="Híbrido"><option value="Elétrico"></datalist>
+<datalist id="dlCambio"><option value="Automático"><option value="Manual"></datalist>
+
+<div class="toast" id="toast"></div>
+
+<script src="../assets/js/supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- utilidades ---------- */
+const $ = (s, el) => (el || document).querySelector(s);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const show = (id, on) => { document.getElementById(id).hidden = !on; };
+const ICON = {
+  grip:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 15 6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
+};
+let toastT;
+function toast(msg, err){
+  const t = $('#toast'); t.textContent = msg; t.classList.toggle('err', !!err); t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), err ? 5000 : 2600);
+}
+function fail(e, ctx){ console.error(ctx, e); toast((ctx ? ctx + ': ' : '') + (e && e.message ? e.message : 'erro inesperado'), true); }
+/* foto antiga do repositório (assets/...) x foto do Storage (https://...) */
+const photoSrc = f => /^https?:\/\//.test(f) ? f : '../' + f.replace(/^\/+/, '');
+const BUCKET = 'fotos';
+function storagePath(url){
+  const m = /\/storage\/v1\/object\/public\/fotos\/(.+)$/.exec(url || '');
+  return m ? decodeURIComponent(m[1].split('?')[0]) : null;
+}
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c === 'x' ? r : (r&3|8)).toString(16); }));
+
+/* ---------- conexão ---------- */
+const cfg = window.EILAT_SUPABASE || {};
+if (!cfg.url || !cfg.key || !window.supabase) { show('vConfig', true); return; }
+const sb = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true } });
+
+let me = null;
+async function boot(){
+  const { data } = await sb.auth.getSession();
+  if (!data.session) { show('vLogin', true); show('vApp', false); return; }
+  const { data: ok, error } = await sb.rpc('is_admin');
+  if (error || !ok) {
+    await sb.auth.signOut();
+    show('vLogin', true); show('vApp', false);
+    loginMsg('Esse e-mail ainda não tem permissão no painel. Peça para um administrador liberar.');
+    return;
+  }
+  me = data.session.user;
+  $('#who').textContent = me.email;
+  show('vLogin', false); show('vApp', true);
+  loadCars(); loadVideos(); loadConfig(); loadAdmins();
+}
+function loginMsg(t, ok){ const m = $('#lMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); m.hidden = !t; }
+
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = $('#lBtn'); b.disabled = true; b.innerHTML = '<span class="spin"></span>'; loginMsg('');
+  const { error } = await sb.auth.signInWithPassword({ email: $('#lEmail').value.trim(), password: $('#lPass').value });
+  b.disabled = false; b.textContent = 'Entrar';
+  if (error) { loginMsg(/invalid/i.test(error.message) ? 'E-mail ou senha incorretos.' : error.message); return; }
+  boot();
+});
+$('#logout').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+/* abas */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  show('tEstoque', t.dataset.tab === 'estoque'); show('tVideos', t.dataset.tab === 'videos'); show('tConfig', t.dataset.tab === 'config');
+}));
+
+/* =========================================================
+   ESTOQUE
+   ========================================================= */
+let cars = [], filter = 'todos', query = '', carSortable = null;
+const STATUS = { disponivel:'Disponível', vendido:'Vendido', oculto:'Oculto' };
+
+async function loadCars(){
+  const { data, error } = await sb.from('carros').select('*').order('ordem', { ascending: true }).order('created_at', { ascending: false });
+  if (error) return fail(error, 'Erro ao carregar o estoque');
+  cars = data; renderCars();
+  $('#dlMarca').innerHTML = [...new Set(cars.map(c => c.marca))].sort().map(m => '<option value="' + esc(m) + '">').join('');
+}
+function renderChips(){
+  const n = s => cars.filter(c => s === 'todos' || c.status === s).length;
+  $('#chips').innerHTML = [['todos','Todos'],['disponivel','Disponíveis'],['vendido','Vendidos'],['oculto','Ocultos']]
+    .map(([k,l]) => '<button class="chip' + (filter === k ? ' on' : '') + '" data-f="' + k + '">' + l + '<b>' + n(k) + '</b></button>').join('');
+}
+$('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; filter = b.dataset.f; renderCars(); });
+$('#search').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); renderCars(); });
+
+function renderCars(){
+  renderChips();
+  const list = cars.filter(c => (filter === 'todos' || c.status === filter) &&
+    (!query || (c.marca + ' ' + c.modelo + ' ' + c.versao).toLowerCase().includes(query)));
+  const sortable = filter === 'todos' && !query;
+  const el = $('#carList');
+  el.classList.toggle('no-sort', !sortable);
+  $('#sortHint').hidden = !sortable || cars.length < 2;
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">' + (cars.length ? 'Nenhum veículo nesse filtro.' : 'Nenhum veículo cadastrado ainda. Clique em <b>+ Novo veículo</b>.') + '</div>';
+  } else {
+    el.innerHTML = list.map(c => {
+      const cover = c.fotos && c.fotos[0] ? 'background-image:url(\'' + esc(photoSrc(c.fotos[0])) + '\')' : '';
+      const km = c.km ? c.km.toLocaleString('pt-BR') + ' km' : 'Zero km';
+      return '<div class="row" data-id="' + c.id + '">' +
+        '<span class="handle" aria-hidden="true">' + ICON.grip + '</span>' +
+        '<div class="thumb" style="' + cover + '"></div>' +
+        '<div class="info"><div class="brand">' + esc(c.marca) + (c.blindado ? ' · Blindado' : '') + '</div>' +
+          '<div class="name">' + esc(c.modelo) + '</div>' +
+          '<div class="meta">' + esc([c.versao, c.ano, km, (c.fotos || []).length + ' fotos'].filter(Boolean).join(' · ')) + '</div></div>' +
+        '<div class="acts">' +
+          '<select class="st ' + c.status + '" data-status aria-label="Situação">' +
+            Object.keys(STATUS).map(s => '<option value="' + s + '"' + (s === c.status ? ' selected' : '') + '>' + STATUS[s] + '</option>').join('') +
+          '</select>' +
+          '<button class="btn btn-ghost btn-sm" data-edit>Editar</button>' +
+        '</div></div>';
+    }).join('');
+  }
+  if (carSortable) { carSortable.destroy(); carSortable = null; }
+  if (sortable && list.length > 1 && window.Sortable) {
+    carSortable = Sortable.create(el, { handle: '.handle', animation: 150, ghostClass: 'ghost', onEnd: saveCarOrder });
+  }
+}
+$('#carList').addEventListener('change', async e => {
+  const sel = e.target.closest('[data-status]'); if (!sel) return;
+  const id = sel.closest('.row').dataset.id, status = sel.value;
+  const { error } = await sb.from('carros').update({ status }).eq('id', id);
+  if (error) { fail(error, 'Não salvou'); return loadCars(); }
+  const c = cars.find(x => x.id === id); if (c) c.status = status;
+  renderCars(); toast('Situação atualizada: ' + STATUS[status]);
+});
+$('#carList').addEventListener('click', e => {
+  if (!e.target.closest('[data-edit]')) return;
+  openEditor(cars.find(c => c.id === e.target.closest('.row').dataset.id));
+});
+async function saveCarOrder(){
+  const ids = [...document.querySelectorAll('#carList .row')].map(r => r.dataset.id);
+  const byId = Object.fromEntries(cars.map(c => [c.id, c]));
+  cars = ids.map(id => byId[id]);
+  const res = await Promise.all(ids.map((id, i) => sb.from('carros').update({ ordem: (i + 1) * 10 }).eq('id', id)));
+  const err = res.find(r => r.error);
+  if (err) return fail(err.error, 'Ordem não salva');
+  cars.forEach((c, i) => c.ordem = (i + 1) * 10);
+  toast('Ordem salva');
+}
+
+/* ---------- editor ---------- */
+let ed = null, photoSortable = null;
+const form = $('#eForm');
+
+function openEditor(car){
+  const isNew = !car;
+  ed = {
+    isNew,
+    id: isNew ? uid() : car.id,
+    fotos: isNew ? [] : [...(car.fotos || [])],
+    uploaded: [],   // subidas nesta edição (apagar se cancelar)
+    removed: [],    // removidas nesta edição (apagar do Storage ao salvar)
+    uploading: 0
+  };
+  const c = car || { marca:'', modelo:'', versao:'', ano: new Date().getFullYear(), km: 0, preco: 0, comb:'Flex', cambio:'Automático', status:'disponivel', blindado:true, zero:true, tipo:'suv', ficha:[] };
+  $('#eTitle').textContent = isNew ? 'Novo veículo' : (c.marca + ' ' + c.modelo);
+  ['marca','modelo','versao','ano','km','preco','comb','cambio','status','tipo'].forEach(k => { form.elements[k].value = c[k] == null ? '' : c[k]; });
+  form.elements.blindado.checked = !!c.blindado;
+  form.elements.zero.checked = !!c.zero;
+  renderFicha(Array.isArray(c.ficha) ? c.ficha : []);
+  renderPhotos();
+  $('#eDelete').hidden = isNew;
+  show('editor', true);
+  document.body.style.overflow = 'hidden';
+  form.scrollTop = 0;
+}
+async function closeEditor(discard){
+  if (discard && ed && ed.uploaded.length) {
+    const paths = ed.uploaded.map(storagePath).filter(Boolean);
+    if (paths.length) await sb.storage.from(BUCKET).remove(paths);
+  }
+  ed = null;
+  show('editor', false);
+  document.body.style.overflow = '';
+}
+$('#newCar').addEventListener('click', () => openEditor(null));
+$('#eClose').addEventListener('click', () => confirmDiscard());
+$('#eCancel').addEventListener('click', () => confirmDiscard());
+function confirmDiscard(){
+  if (ed && ed.uploading) { toast('Aguarde as fotos terminarem de subir', true); return; }
+  if (ed && ed.uploaded.length && !confirm('Descartar as alterações e as fotos que você subiu agora?')) return;
+  closeEditor(true);
+}
+form.elements.km.addEventListener('input', () => { if (+form.elements.km.value > 0) form.elements.zero.checked = false; });
+
+/* ficha técnica */
+function renderFicha(items){
+  $('#eFicha').innerHTML = '';
+  items.forEach(it => addKv(it.k, it.v));
+  if (!items.length) { addKv('Motor',''); addKv('Potência',''); addKv('Nível de blindagem','III-A'); }
+}
+function addKv(k, v){
+  const row = document.createElement('div');
+  row.className = 'kv-row';
+  row.innerHTML = '<input class="inp" data-k placeholder="Item (ex: Motor)" value="' + esc(k || '') + '">' +
+    '<input class="inp" data-v placeholder="Valor" value="' + esc(v || '') + '">' +
+    '<div class="moves"><button type="button" class="icon-btn" data-up aria-label="Subir">' + ICON.up + '</button>' +
+    '<button type="button" class="icon-btn" data-rm aria-label="Remover">' + ICON.x + '</button></div>';
+  $('#eFicha').appendChild(row);
+  return row;
+}
+$('#eAddKv').addEventListener('click', () => addKv('', '').querySelector('input').focus());
+$('#eFicha').addEventListener('click', e => {
+  const row = e.target.closest('.kv-row'); if (!row) return;
+  if (e.target.closest('[data-rm]')) row.remove();
+  if (e.target.closest('[data-up]') && row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
+});
+
+/* fotos */
+function renderPhotos(){
+  const el = $('#ePhotos');
+  el.innerHTML = ed.fotos.map((f, i) =>
+    '<div class="ph" data-src="' + esc(f) + '">' +
+      '<img src="' + esc(photoSrc(f)) + '" alt="" loading="lazy">' +
+      (i === 0 ? '<span class="cover">Capa</span>' : '') +
+      '<div class="tools">' +
+        (i > 0 ? '<button type="button" data-cover title="Usar como capa">' + ICON.star + '</button>' : '') +
+        '<button type="button" data-del title="Remover foto">' + ICON.x + '</button>' +
+      '</div></div>').join('') +
+    Array.from({ length: ed.uploading }, () => '<div class="ph uploading"><span class="spin"></span></div>').join('') +
+    '<label class="drop" id="eDrop" for="eFile">' + ICON.plus + 'Adicionar fotos<small>ou arraste aqui</small></label>';
+  $('#eCount').textContent = ed.fotos.length ? '(' + ed.fotos.length + ')' : '';
+  if (photoSortable) photoSortable.destroy();
+  photoSortable = window.Sortable ? Sortable.create(el, {
+    animation: 150, ghostClass: 'ghost', draggable: '.ph[data-src]', filter: '.tools button', preventOnFilter: false,
+    delay: 120, delayOnTouchOnly: true,
+    onEnd: () => { ed.fotos = [...el.querySelectorAll('.ph[data-src]')].map(n => n.dataset.src); renderPhotos(); }
+  }) : null;
+  const drop = $('#eDrop');
+  drop.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); drop.classList.add('over'); } });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); uploadFiles(e.dataTransfer.files); });
+}
+$('#ePhotos').addEventListener('click', e => {
+  const ph = e.target.closest('.ph[data-src]'); if (!ph) return;
+  const src = ph.dataset.src;
+  if (e.target.closest('[data-cover]')) { ed.fotos = [src, ...ed.fotos.filter(f => f !== src)]; renderPhotos(); }
+  if (e.target.closest('[data-del]')) {
+    ed.fotos = ed.fotos.filter(f => f !== src);
+    if (ed.uploaded.includes(src)) { ed.uploaded = ed.uploaded.filter(f => f !== src); const p = storagePath(src); if (p) sb.storage.from(BUCKET).remove([p]); }
+    else ed.removed.push(src);
+    renderPhotos();
+  }
+});
+$('#eFile').addEventListener('change', e => { uploadFiles(e.target.files); e.target.value = ''; });
+
+/* reduz a foto no navegador antes de subir (máx. 1920px) */
+async function compress(file){
+  const MAX = 1920;
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (_) { bmp = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); }); }
+  const w0 = bmp.width, h0 = bmp.height, k = Math.min(1, MAX / Math.max(w0, h0));
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(w0 * k); cv.height = Math.round(h0 * k);
+  cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+  const toBlob = (type, q) => new Promise(r => cv.toBlob(r, type, q));
+  let blob = await toBlob('image/webp', .82);
+  if (!blob || blob.type !== 'image/webp') blob = await toBlob('image/jpeg', .85);
+  return blob;
+}
+async function uploadFiles(fileList){
+  const files = [...(fileList || [])].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+  if (!files.length || !ed) return;
+  const edRef = ed;
+  edRef.uploading += files.length; renderPhotos();
+  let falhas = 0;
+  for (const file of files) {
+    try {
+      const blob = await compress(file);
+      const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = 'carros/' + edRef.id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+      const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: blob.type, cacheControl: '31536000', upsert: false });
+      if (error) throw error;
+      const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      edRef.fotos.push(url); edRef.uploaded.push(url);
+    } catch (e) { falhas++; console.error('upload', file.name, e); }
+    edRef.uploading--;
+    if (ed === edRef) renderPhotos();
+  }
+  if (falhas) toast(falhas + ' foto(s) não subiram. Se for foto do iPhone (HEIC), exporte como JPG e tente de novo.', true);
+}
+
+/* salvar / excluir */
+$('#eSave').addEventListener('click', async () => {
+  if (!ed) return;
+  if (ed.uploading) return toast('Aguarde as fotos terminarem de subir', true);
+  const v = n => form.elements[n].value.trim();
+  if (!v('marca') || !v('modelo') || !v('ano')) { toast('Preencha marca, modelo e ano', true); return; }
+  const ficha = [...document.querySelectorAll('#eFicha .kv-row')]
+    .map(r => ({ k: r.querySelector('[data-k]').value.trim(), v: r.querySelector('[data-v]').value.trim() }))
+    .filter(it => it.k && it.v);
+  const row = {
+    marca: v('marca'), modelo: v('modelo'), versao: v('versao'),
+    ano: parseInt(v('ano'), 10), km: parseInt(v('km') || '0', 10) || 0, preco: parseFloat(v('preco') || '0') || 0,
+    comb: v('comb') || 'Flex', cambio: v('cambio') || 'Automático', status: v('status'), tipo: v('tipo'),
+    blindado: form.elements.blindado.checked, zero: form.elements.zero.checked,
+    fotos: ed.fotos, ficha
+  };
+  const btn = $('#eSave'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  let res;
+  if (ed.isNew) {
+    const min = cars.length ? Math.min(...cars.map(c => c.ordem || 0)) : 10;
+    res = await sb.from('carros').insert(Object.assign({ id: ed.id, ordem: min - 10 }, row));
+  } else {
+    res = await sb.from('carros').update(row).eq('id', ed.id);
+  }
+  btn.disabled = false; btn.textContent = 'Salvar';
+  if (res.error) return fail(res.error, 'Não salvou');
+  const paths = ed.removed.map(storagePath).filter(Boolean);
+  if (paths.length) await sb.storage.from(BUCKET).remove(paths);
+  const nome = row.marca + ' ' + row.modelo, eraNovo = ed.isNew;
+  await closeEditor(false);
+  await loadCars();
+  toast(eraNovo ? nome + ' cadastrado' : 'Alterações salvas');
+});
+$('#eDelete').addEventListener('click', async () => {
+  if (!ed || ed.isNew) return;
+  const c = cars.find(x => x.id === ed.id);
+  if (!confirm('Excluir ' + c.marca + ' ' + c.modelo + ' de vez?\n\nSe o carro só foi vendido, use a situação "Vendido" em vez de excluir.')) return;
+  const { error } = await sb.from('carros').delete().eq('id', ed.id);
+  if (error) return fail(error, 'Não excluiu');
+  const paths = [...(c.fotos || []), ...ed.fotos, ...ed.uploaded].map(storagePath).filter(Boolean);
+  if (paths.length) await sb.storage.from(BUCKET).remove([...new Set(paths)]);
+  await closeEditor(false); await loadCars(); toast('Veículo excluído');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ed) confirmDiscard(); });
+
+/* =========================================================
+   VÍDEOS
+   ========================================================= */
+let vids = [], vidSortable = null;
+function ytId(s){
+  s = (s || '').trim();
+  if (/^[\w-]{11}$/.test(s)) return s;
+  const m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/.exec(s);
+  return m ? m[1] : null;
+}
+async function loadVideos(){
+  const { data, error } = await sb.from('videos').select('*').order('ordem').order('created_at');
+  if (error) return fail(error, 'Erro ao carregar vídeos');
+  vids = data; renderVideos();
+}
+function renderVideos(){
+  const el = $('#vidList');
+  el.innerHTML = vids.length ? vids.map(v =>
+    '<div class="vrow" data-id="' + v.id + '">' +
+      '<span class="handle">' + ICON.grip + '</span>' +
+      '<div class="vthumb" style="background-image:url(\'https://i.ytimg.com/vi/' + esc(v.youtube_id) + '/hqdefault.jpg\')"></div>' +
+      '<div class="vf"><input class="inp" data-field="tag" value="' + esc(v.tag) + '" aria-label="Etiqueta"><input class="inp" data-field="titulo" value="' + esc(v.titulo) + '" aria-label="Título"></div>' +
+      '<div class="acts"><label class="switch" title="Aparece no site"><input type="checkbox" data-field="ativo"' + (v.ativo ? ' checked' : '') + '><span></span></label>' +
+      '<button class="icon-btn" data-vdel aria-label="Remover">' + ICON.x + '</button></div>' +
+    '</div>').join('') : '<div class="empty">Nenhum vídeo cadastrado.</div>';
+  if (vidSortable) vidSortable.destroy();
+  vidSortable = vids.length > 1 && window.Sortable ? Sortable.create(el, { handle: '.handle', animation: 150, ghostClass: 'ghost', onEnd: async () => {
+    const ids = [...el.querySelectorAll('.vrow')].map(r => r.dataset.id);
+    const res = await Promise.all(ids.map((id, i) => sb.from('videos').update({ ordem: (i + 1) * 10 }).eq('id', id)));
+    if (res.find(r => r.error)) return fail(res.find(r => r.error).error, 'Ordem não salva');
+    const byId = Object.fromEntries(vids.map(v => [v.id, v])); vids = ids.map(id => byId[id]);
+    toast('Ordem salva');
+  }}) : null;
+}
+$('#vidList').addEventListener('change', async e => {
+  const inp = e.target.closest('[data-field]'); if (!inp) return;
+  const id = inp.closest('.vrow').dataset.id, field = inp.dataset.field;
+  const value = field === 'ativo' ? inp.checked : inp.value.trim();
+  if (field !== 'ativo' && !value) { toast('Esse campo não pode ficar vazio', true); return loadVideos(); }
+  const { error } = await sb.from('videos').update({ [field]: value }).eq('id', id);
+  if (error) return fail(error, 'Não salvou');
+  const v = vids.find(x => x.id === id); if (v) v[field] = value;
+  toast(field === 'ativo' ? (value ? 'Vídeo visível no site' : 'Vídeo oculto do site') : 'Salvo');
+});
+$('#vidList').addEventListener('click', async e => {
+  if (!e.target.closest('[data-vdel]')) return;
+  const id = e.target.closest('.vrow').dataset.id;
+  if (!confirm('Remover esse vídeo do site?')) return;
+  const { error } = await sb.from('videos').delete().eq('id', id);
+  if (error) return fail(error, 'Não removeu');
+  vids = vids.filter(v => v.id !== id); renderVideos(); toast('Vídeo removido');
+});
+$('#vUrl').addEventListener('change', async () => {
+  const id = ytId($('#vUrl').value); if (!id || $('#vTitle').value) return;
+  try { const r = await fetch('https://noembed.com/embed?url=https://www.youtube.com/watch?v=' + id); const j = await r.json(); if (j.title && !$('#vTitle').value) $('#vTitle').value = j.title; } catch (_) {}
+});
+$('#vidForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = ytId($('#vUrl').value);
+  if (!id) return toast('Link do YouTube inválido', true);
+  const max = vids.length ? Math.max(...vids.map(v => v.ordem || 0)) : 0;
+  const { error } = await sb.from('videos').insert({ youtube_id: id, tag: $('#vTag').value.trim() || 'Review', titulo: $('#vTitle').value.trim(), ordem: max + 10 });
+  if (error) return fail(error, 'Não adicionou');
+  $('#vUrl').value = ''; $('#vTitle').value = '';
+  loadVideos(); toast('Vídeo adicionado');
+});
+
+/* =========================================================
+   CONFIGURAÇÕES
+   ========================================================= */
+async function loadConfig(){
+  const { data, error } = await sb.from('config').select('*').eq('id', 1).maybeSingle();
+  if (error) return fail(error, 'Erro nas configurações');
+  $('#cPreco').checked = data ? data.preco_sob_consulta : true;
+}
+$('#cPreco').addEventListener('change', async e => {
+  const { error } = await sb.from('config').update({ preco_sob_consulta: e.target.checked }).eq('id', 1);
+  if (error) { e.target.checked = !e.target.checked; return fail(error, 'Não salvou'); }
+  toast(e.target.checked ? 'Preços agora aparecem como "Sob consulta"' : 'Preços agora aparecem no site');
+});
+async function loadAdmins(){
+  const { data, error } = await sb.from('admins').select('email').order('created_at');
+  if (error) return fail(error, 'Erro ao carregar acessos');
+  $('#admins').innerHTML = data.map(a => '<div><span>' + esc(a.email) + '</span>' +
+    (me && a.email.toLowerCase() === me.email.toLowerCase() ? '<small style="color:var(--txt-3)">você</small>' : '<button class="icon-btn" data-adel="' + esc(a.email) + '" aria-label="Remover acesso">' + ICON.x + '</button>') +
+    '</div>').join('');
+}
+$('#admins').addEventListener('click', async e => {
+  const b = e.target.closest('[data-adel]'); if (!b) return;
+  if (!confirm('Remover o acesso de ' + b.dataset.adel + '?')) return;
+  const { error } = await sb.from('admins').delete().eq('email', b.dataset.adel);
+  if (error) return fail(error, 'Não removeu');
+  loadAdmins(); toast('Acesso removido');
+});
+$('#adminForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#aEmail').value.trim().toLowerCase();
+  const { error } = await sb.from('admins').insert({ email });
+  if (error) return fail(error, /duplicate/i.test(error.message) ? 'Esse e-mail já tem acesso' : 'Não liberou');
+  $('#aEmail').value = ''; loadAdmins(); toast('Acesso liberado para ' + email);
+});
+$('#passForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const { error } = await sb.auth.updateUser({ password: $('#pNew').value });
+  if (error) return fail(error, 'Senha não alterada');
+  $('#pNew').value = ''; toast('Senha alterada');
+});
+
+boot();
+})();
+</script>
+</body>
+</html>
