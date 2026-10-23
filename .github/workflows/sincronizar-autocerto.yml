@@ -19,7 +19,14 @@ jobs:
   sincronizar:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # enquanto os secrets não forem cadastrados, o job só avisa e termina sem erro
+      TEM_SECRETS: ${{ secrets.AUTOCERTO_USERNAME != '' && secrets.SUPABASE_SERVICE_KEY != '' && 'sim' || 'nao' }}
     steps:
+      - name: Conferir secrets
+        if: env.TEM_SECRETS != 'sim'
+        run: echo "::notice::Secrets da AutoCerto/Supabase ainda não cadastrados. Sincronização pulada."
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -30,6 +37,7 @@ jobs:
         run: pip install requests==2.32.5
 
       - name: Sincronizar
+        if: env.TEM_SECRETS == 'sim'
         env:
           AUTOCERTO_USERNAME: ${{ secrets.AUTOCERTO_USERNAME }}
           AUTOCERTO_PASSWORD: ${{ secrets.AUTOCERTO_PASSWORD }}
