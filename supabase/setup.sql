@@ -105,7 +105,7 @@ create policy "config_admin_write" on public.config for update to authenticated
 
 -- updated_at automático
 create or replace function public.touch_updated_at() returns trigger
-language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
+language plpgsql set search_path = '' as $$ begin new.updated_at = now(); return new; end $$;
 drop trigger if exists carros_touch on public.carros;
 create trigger carros_touch before update on public.carros for each row execute function public.touch_updated_at();
 drop trigger if exists config_touch on public.config;

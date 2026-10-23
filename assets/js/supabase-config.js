@@ -10,6 +10,6 @@
    que já está dentro do index.html.
    ============================================================ */
 window.EILAT_SUPABASE = {
-  url: '',
-  key: ''
+  url: 'https://axbbautxfrhjiwncekde.supabase.co',
+  key: 'sb_publishable_1-YZ211ob6caXru1K6wrkw_w67B8Ms1'
 };
